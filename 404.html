@@ -82,9 +82,9 @@ p{color:#8a7a5a;font-size:0.9rem;line-height:1.7;margin-bottom:8px}
     btn.classList.add('home');
   }
 
-  btn.addEventListener('mousedown',function(e){
-    e.preventDefault();
+  function handleDown(e){
     if(done)return;
+    e.preventDefault();
     tries++;
     if(tries<6){
       flee();
@@ -101,28 +101,10 @@ p{color:#8a7a5a;font-size:0.9rem;line-height:1.7;margin-bottom:8px}
       msg.textContent='Clique pour rejoindre les projets →';
       taunt.textContent='';
     }
-  });
+  }
 
-  btn.addEventListener('touchstart',function(e){
-    e.preventDefault();
-    if(done)return;
-    tries++;
-    if(tries<6){
-      flee();
-      msg.textContent='Tentative n°'+tries+'/6';
-    }else{
-      done=true;
-      goHome();
-      btn.classList.remove('home');
-      btn.classList.add('done');
-      btn.href='https://ucfzem.github.io/works/';
-      emoji.textContent='🎉';
-      subtitle.textContent='BRAVO ! Tu as vaincu le bouton !';
-      counter.textContent='Attrapé au bout de '+tries+' tentatives';
-      msg.textContent='Clique pour rejoindre les projets →';
-      taunt.textContent='';
-    }
-  });
+  btn.addEventListener('mousedown',handleDown);
+  btn.addEventListener('touchstart',handleDown);
 })();
 </script>
 </body>
