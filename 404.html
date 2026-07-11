@@ -14,229 +14,115 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans
 h1{font-family:'Cinzel',serif;color:#c9a84c;font-size:1.3rem;margin-bottom:12px;font-weight:700}
 p{color:#8a7a5a;font-size:0.9rem;line-height:1.7;margin-bottom:8px}
 .emoji{font-size:40px;display:block;margin-bottom:16px}
-.btn{display:inline-block;padding:14px 36px;border-radius:20px;background:linear-gradient(135deg,#c9a84c,#f0c866);color:#0d0d0d;font-size:1rem;font-weight:700;text-decoration:none;cursor:pointer;position:fixed;z-index:999;white-space:nowrap;user-select:none;-webkit-user-select:none;touch-action:none;transition:none;box-shadow:0 0 20px rgba(201,168,76,0.3)}
-.btn.caught{position:relative;margin:24px auto 0;display:inline-block;cursor:pointer;box-shadow:none}
-.btn.caught:hover{transform:scale(1.03);box-shadow:0 8px 30px rgba(201,168,76,0.3)}
-.btn.caught:active{transform:scale(.97)}
+.btn-wrap{height:70px;display:flex;align-items:center;justify-content:center;margin-top:24px}
+.btn{display:inline-block;padding:14px 36px;border-radius:20px;background:linear-gradient(135deg,#c9a84c,#f0c866);color:#0d0d0d;font-size:1rem;font-weight:700;text-decoration:none;cursor:pointer;white-space:nowrap;user-select:none;-webkit-user-select:none;touch-action:none;position:fixed;z-index:999;box-shadow:0 0 20px rgba(201,168,76,0.3);transition:none}
+.btn.home{position:static;box-shadow:none}
+.btn.done{position:static;box-shadow:none}
+.btn.done:hover{transform:scale(1.03);box-shadow:0 8px 30px rgba(201,168,76,0.3)}
+.btn.done:active{transform:scale(.97)}
 .counter{color:#c9a84c;font-size:0.75rem;letter-spacing:1px;text-transform:uppercase;margin-top:20px;display:block;min-height:1.2em;font-weight:700}
 .msg{color:#5a4a3a;font-size:0.8rem;margin-top:8px;min-height:1.2em}
-.taunt{display:block;margin-top:10px;color:#8a7a5a;font-size:1.1rem;min-height:1.5em;font-style:italic;font-weight:700}
+.taunt{display:block;margin-top:10px;color:#8a7a5a;font-size:1rem;min-height:1.5em;font-style:italic}
 </style>
 </head>
 <body>
-<div class="card" id="card">
+<div class="card">
   <div class="glow"></div>
   <div class="content">
     <span class="emoji" id="emoji">🔒</span>
     <div class="code">404</div>
     <h1>Page introuvable</h1>
     <p>Cette page a été déplacée, supprimée<br>ou elle vous évite tout simplement.</p>
-    <p style="color:#6a5a4a;font-size:0.8rem" id="subtitle">Attrapez le bouton pour partir →</p>
-    <span class="taunt" id="taunt">Bonjour, tu veux me cliquer ?</span>
+    <p style="color:#6a5a4a;font-size:0.8rem" id="subtitle">Clique sur le bouton pour partir →</p>
+    <div class="btn-wrap"><a class="btn" id="btn">← Retour aux projets</a></div>
+    <span class="taunt" id="taunt"></span>
     <span class="counter" id="counter"></span>
     <span class="msg" id="msg"></span>
   </div>
 </div>
 <script>
 (function(){
-  let btn=document.getElementById('btn');
-  if(!btn){
-    btn=document.createElement('a');
-    btn.id='btn';
-    btn.className='btn';
-    btn.textContent='← Retour aux projets';
-    document.body.appendChild(btn);
-  }
-
+  const btn=document.getElementById('btn');
   const emoji=document.getElementById('emoji');
   const subtitle=document.getElementById('subtitle');
   const counter=document.getElementById('counter');
   const msg=document.getElementById('msg');
   const taunt=document.getElementById('taunt');
-  const card=document.getElementById('card');
 
-  let caught=0;
-  let escaped=0;
-  let autoTimer=null;
-  let isCaught=false;
+  let tries=0;
+  let done=false;
 
   const taunts=[
-    'Trop lent !', 'Haha raté !', 'Tu peux pas m\'attraper !',
-    'Cherche encore...', 'Presque... non en fait', 'T\'es sérieux là ?',
-    'Bouge pas... ah si', 'Pas aujourd\'hui !', 'Même pas peur !',
-    'Tu regardes où ?', 'Derrière toi !', 'Nope !',
-    'Tu fais exprès ?', 'Encore raté héhé', 'Allez, concentre-toi !',
-    'T\'aurais dû cliquer plus vite !', 'AH AH AH', 
-    'Je suis LENT-3PO', 'Tu cliques comme ma grand-mère',
-    'Essaie avec la souris, pas le clavier'
+    'Trop lent !', 'Raté !', 'Presque...', 'Encore raté héhé',
+    'Tu fais exprès ?', 'Pas aujourd\'hui !',
+    'T\'es sérieux ?', 'AH AH !', 'Nope !', 'Cherche encore',
+    'Tu cliques comme ma grand-mère', 'Essaie encore !'
   ];
 
-  const colorTaunts=[
-    'T\'es pas dans le coin !', 'T\'étais pas loin !',
-    'T\'as vu ? Je vole !', 'Bouge pas, je reviens... NON !',
-    'Je suis là ! Non là ! LÀ !'
-  ];
-
-  const nearMiss=[
-    'À 2 doigts !', 'PRESQUE !', 'AAAAH t\'y étais !',
-    'Trop près, je fuis !'
-  ];
-
-  function rnd(a,b){return a+Math.random()*(b-a)}
-
-  function teleport(){
-    if(isCaught)return;
-    const bw=btn.offsetWidth||100, bh=btn.offsetHeight||50;
-    const pad=20;
-    const nx=rnd(pad,window.innerWidth-bw-pad);
-    const ny=rnd(pad,window.innerHeight-bh-pad);
-    btn.style.left=nx+'px';
-    btn.style.top=ny+'px';
-    escaped++;
-    const t=escaped%4===0?nearMiss[Math.floor(Math.random()*nearMiss.length)]
-      :escaped%7===0?colorTaunts[Math.floor(Math.random()*colorTaunts.length)]
-      :taunts[Math.floor(Math.random()*taunts.length)];
-    taunt.textContent=t+'  ('+escaped+' fuites)';
-    shakeCard();
+  function getRndPos(){
+    const bw=btn.offsetWidth||120, bh=btn.offsetHeight||48;
+    const p=20;
+    return {
+      x:p+Math.random()*(window.innerWidth-bw-p*2),
+      y:p+Math.random()*(window.innerHeight-bh-p*2)
+    };
   }
 
-  function shakeCard(){
-    card.style.transition='transform .05s';
-    card.style.transform='translate('+rnd(-4,4)+'px,'+rnd(-4,4)+'px)';
-    setTimeout(()=>{
-      card.style.transform='';
-      setTimeout(()=>{
-        card.style.transition='';
-      },50);
-    },100);
+  function flee(){
+    const pos=getRndPos();
+    btn.style.left=pos.x+'px';
+    btn.style.top=pos.y+'px';
+    btn.classList.remove('home');
+    taunt.textContent=taunts[tries-1]||taunts[Math.floor(Math.random()*taunts.length)];
   }
 
-  function startAutoTeleport(){
-    if(autoTimer)clearInterval(autoTimer);
-    autoTimer=setInterval(()=>{
-      if(!isCaught)teleport();
-    },rnd(300,800));
+  function goHome(){
+    btn.style.left='';
+    btn.style.top='';
+    btn.classList.add('home');
   }
 
-  function respawnHome(){
-    if(isCaught)return;
-    const cr=card.getBoundingClientRect();
-    const bw=btn.offsetWidth||100;
-    const nx=cr.left+cr.width/2-bw/2;
-    const ny=cr.bottom+20;
-    btn.style.left=nx+'px';
-    btn.style.top=ny+'px';
-  }
-
-  function catchMe(e){
-    if(e)e.preventDefault();
-    if(isCaught)return;
-    caught++;
-    if(caught>=6){
-      isCaught=true;
-      if(autoTimer)clearInterval(autoTimer);
+  btn.addEventListener('mousedown',function(e){
+    e.preventDefault();
+    if(done)return;
+    tries++;
+    if(tries<6){
+      flee();
+      msg.textContent='Tentative n°'+tries+'/6';
+    }else{
+      done=true;
+      goHome();
+      btn.classList.remove('home');
+      btn.classList.add('done');
+      btn.href='https://ucfzem.github.io/works/';
       emoji.textContent='🎉';
-      subtitle.textContent='BRAVO ! Tu es plus fort que le bug !';
-      counter.textContent='Attrapé après '+escaped+' fuites';
+      subtitle.textContent='BRAVO ! Tu as vaincu le bouton !';
+      counter.textContent='Attrapé au bout de '+tries+' tentatives';
       msg.textContent='Clique pour rejoindre les projets →';
       taunt.textContent='';
-      btn.classList.add('caught');
-      btn.style.left='';
-      btn.style.top='';
-      btn.textContent='← Retour aux projets';
-      btn.href='https://ucfzem.github.io/works/';
-      card.style.transform='';
-      card.style.transition='';
-    }else{
-      msg.textContent='Attrapé '+(caught)+'/'+6+' !';
-      teleport();
     }
-  }
-
-  // Init position
-  btn.style.left='-9999px';
-  setTimeout(()=>{
-    if(!isCaught){
-      respawnHome();
-      startAutoTeleport();
-    }
-  },200);
-
-  // Mouse near → flee
-  document.addEventListener('mousemove',function(e){
-    if(isCaught)return;
-    if(btn.style.left==='-9999px')return;
-    const br=btn.getBoundingClientRect();
-    const cx=br.left+br.width/2, cy=br.top+br.height/2;
-    const dx=e.clientX-cx, dy=e.clientY-cy;
-    if(Math.sqrt(dx*dx+dy*dy)<200){
-      teleport();
-    }
-  });
-
-  // Click near → flee + taunt
-  document.addEventListener('click',function(e){
-    if(isCaught)return;
-    if(btn.style.left==='-9999px')return;
-    const br=btn.getBoundingClientRect();
-    const cx=br.left+br.width/2, cy=br.top+br.height/2;
-    const dx=e.clientX-cx, dy=e.clientY-cy;
-    if(Math.sqrt(dx*dx+dy*dy)<350){
-      teleport();
-    }
-  });
-
-  // Mousedown on btn → flee before click registers
-  btn.addEventListener('mousedown',function(e){
-    if(isCaught)return;
-    e.preventDefault();
-    // 30% chance to actually catch, 70% flee
-    if(Math.random()<0.3){
-      catchMe(e);
-    }else{
-      taunt.textContent='T\'as cru m\'avoir ? HAH!';
-      teleport();
-    }
-  });
-
-  btn.addEventListener('click',function(e){
-    e.preventDefault();
-    if(isCaught)return;
-    // If we get here, catch
-    catchMe(e);
   });
 
   btn.addEventListener('touchstart',function(e){
     e.preventDefault();
-    if(isCaught)return;
-    if(Math.random()<0.25){
-      catchMe(e);
+    if(done)return;
+    tries++;
+    if(tries<6){
+      flee();
+      msg.textContent='Tentative n°'+tries+'/6';
     }else{
-      taunt.textContent='Pas comme ça !';
-      teleport();
+      done=true;
+      goHome();
+      btn.classList.remove('home');
+      btn.classList.add('done');
+      btn.href='https://ucfzem.github.io/works/';
+      emoji.textContent='🎉';
+      subtitle.textContent='BRAVO ! Tu as vaincu le bouton !';
+      counter.textContent='Attrapé au bout de '+tries+' tentatives';
+      msg.textContent='Clique pour rejoindre les projets →';
+      taunt.textContent='';
     }
   });
-
-  // Flee hover
-  btn.addEventListener('mouseenter',function(e){
-    if(isCaught)return;
-    teleport();
-  });
-
-  window.addEventListener('resize',function(){
-    if(!isCaught)respawnHome();
-  });
-
-  // Bonus: click outside card aggressively
-  document.addEventListener('click',function(e){
-    if(isCaught)return;
-    if(!card.contains(e.target) && e.target!==btn){
-      if(Math.random()<0.15){
-        teleport();
-      }
-    }
-  });
-
 })();
 </script>
 </body>
