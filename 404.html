@@ -6,22 +6,21 @@
 <title>404 — Page introuvable</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0d0d0d;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;overflow:hidden}
-.card{background:rgba(201,168,76,0.07);border:1px solid rgba(201,168,76,0.2);border-radius:20px;padding:60px 40px;max-width:480px;width:100%;text-align:center;position:relative}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0d0d0d;min-height:100vh;padding:20px;overflow:hidden}
+.card{background:rgba(201,168,76,0.07);border:1px solid rgba(201,168,76,0.2);border-radius:20px;padding:60px 40px;max-width:480px;width:100%;text-align:center;position:relative;margin:10vh auto 0}
 .code{font-size:100px;font-weight:800;font-family:'Cinzel',serif;background:linear-gradient(135deg,#c9a84c,#f0c866);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;margin-bottom:8px}
 .glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;background:radial-gradient(circle,rgba(201,168,76,0.08),transparent 70%);pointer-events:none;z-index:0}
 .content{position:relative;z-index:1}
 h1{font-family:'Cinzel',serif;color:#c9a84c;font-size:1.3rem;margin-bottom:12px;font-weight:700}
 p{color:#8a7a5a;font-size:0.9rem;line-height:1.7;margin-bottom:8px}
 .emoji{font-size:40px;display:block;margin-bottom:16px}
-.btn{display:inline-block;padding:14px 36px;border-radius:20px;background:linear-gradient(135deg,#c9a84c,#f0c866);color:#0d0d0d;font-size:1rem;font-weight:700;text-decoration:none;cursor:pointer;position:fixed;z-index:999;white-space:nowrap;user-select:none;-webkit-user-select:none;touch-action:none;transition:none}
-.btn.caught{position:relative;display:inline-block;margin-top:24px;cursor:pointer}
+.btn{display:inline-block;padding:14px 36px;border-radius:20px;background:linear-gradient(135deg,#c9a84c,#f0c866);color:#0d0d0d;font-size:1rem;font-weight:700;text-decoration:none;cursor:pointer;position:fixed;z-index:999;white-space:nowrap;user-select:none;-webkit-user-select:none;touch-action:none;transition:none;box-shadow:0 0 20px rgba(201,168,76,0.3)}
+.btn.caught{position:relative;margin:24px auto 0;display:inline-block;cursor:pointer;box-shadow:none}
 .btn.caught:hover{transform:scale(1.03);box-shadow:0 8px 30px rgba(201,168,76,0.3)}
 .btn.caught:active{transform:scale(.97)}
-.btn.caught:link{text-decoration:none}
-.counter{color:#5a4a3a;font-size:0.75rem;letter-spacing:1px;text-transform:uppercase;margin-top:20px;display:block;min-height:1.2em}
-.msg{color:#5a4a3a;font-size:0.8rem;margin-top:8px;min-height:1.2em;transition:opacity .3s}
-.taunt{display:block;margin-top:10px;color:#8a7a5a;font-size:0.9rem;min-height:1.4em;font-style:italic}
+.counter{color:#c9a84c;font-size:0.75rem;letter-spacing:1px;text-transform:uppercase;margin-top:20px;display:block;min-height:1.2em;font-weight:700}
+.msg{color:#5a4a3a;font-size:0.8rem;margin-top:8px;min-height:1.2em}
+.taunt{display:block;margin-top:10px;color:#8a7a5a;font-size:1.1rem;min-height:1.5em;font-style:italic;font-weight:700}
 </style>
 </head>
 <body>
@@ -33,21 +32,21 @@ p{color:#8a7a5a;font-size:0.9rem;line-height:1.7;margin-bottom:8px}
     <h1>Page introuvable</h1>
     <p>Cette page a été déplacée, supprimée<br>ou elle vous évite tout simplement.</p>
     <p style="color:#6a5a4a;font-size:0.8rem" id="subtitle">Attrapez le bouton pour partir →</p>
+    <span class="taunt" id="taunt">Bonjour, tu veux me cliquer ?</span>
     <span class="counter" id="counter"></span>
-    <span class="taunt" id="taunt"></span>
     <span class="msg" id="msg"></span>
   </div>
 </div>
 <script>
 (function(){
-  const btn=document.getElementById('btn')||(function(){
-    const b=document.createElement('a');
-    b.id='btn';
-    b.className='btn';
-    b.textContent='← Retour aux projets';
-    document.body.appendChild(b);
-    return b;
-  })();
+  let btn=document.getElementById('btn');
+  if(!btn){
+    btn=document.createElement('a');
+    btn.id='btn';
+    btn.className='btn';
+    btn.textContent='← Retour aux projets';
+    document.body.appendChild(btn);
+  }
 
   const emoji=document.getElementById('emoji');
   const subtitle=document.getElementById('subtitle');
@@ -56,143 +55,188 @@ p{color:#8a7a5a;font-size:0.9rem;line-height:1.7;margin-bottom:8px}
   const taunt=document.getElementById('taunt');
   const card=document.getElementById('card');
 
-  let caught=0,escaped=0;
-  let jumpTimer=null;
+  let caught=0;
+  let escaped=0;
+  let autoTimer=null;
+  let isCaught=false;
 
   const taunts=[
     'Trop lent !', 'Haha raté !', 'Tu peux pas m\'attraper !',
     'Cherche encore...', 'Presque... non en fait', 'T\'es sérieux là ?',
     'Bouge pas... ah si', 'Pas aujourd\'hui !', 'Même pas peur !',
     'Tu regardes où ?', 'Derrière toi !', 'Nope !',
-    'Tu fais exprès ?', 'Encore raté héhé', 'Allez, concentre-toi !'
+    'Tu fais exprès ?', 'Encore raté héhé', 'Allez, concentre-toi !',
+    'T\'aurais dû cliquer plus vite !', 'AH AH AH', 
+    'Je suis LENT-3PO', 'Tu cliques comme ma grand-mère',
+    'Essaie avec la souris, pas le clavier'
   ];
 
-  function getPos(e){
-    const t=e.touches?e.touches[0]:e;
-    return {x:t.clientX||t.pageX,y:t.clientY||t.pageY};
-  }
+  const colorTaunts=[
+    'T\'es pas dans le coin !', 'T\'étais pas loin !',
+    'T\'as vu ? Je vole !', 'Bouge pas, je reviens... NON !',
+    'Je suis là ! Non là ! LÀ !'
+  ];
 
-  function randomTaunt(){
-    return taunts[Math.floor(Math.random()*taunts.length)];
-  }
+  const nearMiss=[
+    'À 2 doigts !', 'PRESQUE !', 'AAAAH t\'y étais !',
+    'Trop près, je fuis !'
+  ];
 
-  function jumpAway(e){
-    if(caught>=6)return;
-    const pos=getPos(e);
-    const bw=btn.offsetWidth, bh=btn.offsetHeight;
-    const pad=30;
-    let nx, ny;
-    let attempts=0;
+  function rnd(a,b){return a+Math.random()*(b-a)}
 
-    do{
-      nx=pad+Math.random()*(window.innerWidth-bw-pad*2);
-      ny=pad+Math.random()*(window.innerHeight-bh-pad*2);
-      attempts++;
-    }while(
-      Math.abs(nx+bw/2-pos.x)<120 &&
-      Math.abs(ny+bh/2-pos.y)<120 &&
-      attempts<50
-    );
-
+  function teleport(){
+    if(isCaught)return;
+    const bw=btn.offsetWidth||100, bh=btn.offsetHeight||50;
+    const pad=20;
+    const nx=rnd(pad,window.innerWidth-bw-pad);
+    const ny=rnd(pad,window.innerHeight-bh-pad);
     btn.style.left=nx+'px';
     btn.style.top=ny+'px';
     escaped++;
-    const t=randomTaunt();
-    taunt.textContent=t+' (tentative n°'+escaped+')';
+    const t=escaped%4===0?nearMiss[Math.floor(Math.random()*nearMiss.length)]
+      :escaped%7===0?colorTaunts[Math.floor(Math.random()*colorTaunts.length)]
+      :taunts[Math.floor(Math.random()*taunts.length)];
+    taunt.textContent=t+'  ('+escaped+' fuites)';
+    shakeCard();
   }
 
-  function respawnInCard(){
+  function shakeCard(){
+    card.style.transition='transform .05s';
+    card.style.transform='translate('+rnd(-4,4)+'px,'+rnd(-4,4)+'px)';
+    setTimeout(()=>{
+      card.style.transform='';
+      setTimeout(()=>{
+        card.style.transition='';
+      },50);
+    },100);
+  }
+
+  function startAutoTeleport(){
+    if(autoTimer)clearInterval(autoTimer);
+    autoTimer=setInterval(()=>{
+      if(!isCaught)teleport();
+    },rnd(300,800));
+  }
+
+  function respawnHome(){
+    if(isCaught)return;
     const cr=card.getBoundingClientRect();
-    const bw=btn.offsetWidth, bh=btn.offsetHeight;
+    const bw=btn.offsetWidth||100;
     const nx=cr.left+cr.width/2-bw/2;
     const ny=cr.bottom+20;
     btn.style.left=nx+'px';
     btn.style.top=ny+'px';
   }
 
-  function catchMe(){
-    if(caught>=6)return;
+  function catchMe(e){
+    if(e)e.preventDefault();
+    if(isCaught)return;
     caught++;
-    if(caught<6){
-      taunt.textContent='Hop ! +1 — encore '+(6-caught);
-      respawnInCard();
-    }else{
+    if(caught>=6){
+      isCaught=true;
+      if(autoTimer)clearInterval(autoTimer);
       emoji.textContent='🎉';
-      subtitle.textContent='BRAVO ! Tu es plus rapide qu\'un bug !';
-      counter.textContent='Attrapé en '+escaped+' tentative'+(escaped>1?'s':'');
+      subtitle.textContent='BRAVO ! Tu es plus fort que le bug !';
+      counter.textContent='Attrapé après '+escaped+' fuites';
       msg.textContent='Clique pour rejoindre les projets →';
+      taunt.textContent='';
       btn.classList.add('caught');
       btn.style.left='';
       btn.style.top='';
       btn.textContent='← Retour aux projets';
       btn.href='https://ucfzem.github.io/works/';
-      taunt.textContent='';
+      card.style.transform='';
+      card.style.transition='';
+    }else{
+      msg.textContent='Attrapé '+(caught)+'/'+6+' !';
+      teleport();
     }
   }
 
-  function onMove(e){
-    if(caught>=6)return;
-    const pos=getPos(e);
+  // Init position
+  btn.style.left='-9999px';
+  setTimeout(()=>{
+    if(!isCaught){
+      respawnHome();
+      startAutoTeleport();
+    }
+  },200);
+
+  // Mouse near → flee
+  document.addEventListener('mousemove',function(e){
+    if(isCaught)return;
+    if(btn.style.left==='-9999px')return;
     const br=btn.getBoundingClientRect();
     const cx=br.left+br.width/2, cy=br.top+br.height/2;
-    const dx=pos.x-cx, dy=pos.y-cy;
-    const dist=Math.sqrt(dx*dx+dy*dy);
-    if(dist<150){
-      jumpAway(e);
+    const dx=e.clientX-cx, dy=e.clientY-cy;
+    if(Math.sqrt(dx*dx+dy*dy)<200){
+      teleport();
     }
-  }
+  });
 
-  btn.style.left='-9999px';
-  btn.style.top='-9999px';
-  setTimeout(respawnInCard,100);
+  // Click near → flee + taunt
+  document.addEventListener('click',function(e){
+    if(isCaught)return;
+    if(btn.style.left==='-9999px')return;
+    const br=btn.getBoundingClientRect();
+    const cx=br.left+br.width/2, cy=br.top+br.height/2;
+    const dx=e.clientX-cx, dy=e.clientY-cy;
+    if(Math.sqrt(dx*dx+dy*dy)<350){
+      teleport();
+    }
+  });
 
-  document.addEventListener('mousemove',onMove);
-  document.addEventListener('touchmove',function(e){
-    onMove(e);
+  // Mousedown on btn → flee before click registers
+  btn.addEventListener('mousedown',function(e){
+    if(isCaught)return;
+    e.preventDefault();
+    // 30% chance to actually catch, 70% flee
+    if(Math.random()<0.3){
+      catchMe(e);
+    }else{
+      taunt.textContent='T\'as cru m\'avoir ? HAH!';
+      teleport();
+    }
   });
 
   btn.addEventListener('click',function(e){
     e.preventDefault();
-    catchMe();
+    if(isCaught)return;
+    // If we get here, catch
+    catchMe(e);
   });
 
   btn.addEventListener('touchstart',function(e){
     e.preventDefault();
-    catchMe();
+    if(isCaught)return;
+    if(Math.random()<0.25){
+      catchMe(e);
+    }else{
+      taunt.textContent='Pas comme ça !';
+      teleport();
+    }
   });
 
+  // Flee hover
   btn.addEventListener('mouseenter',function(e){
-    if(caught>=6)return;
-    jumpAway(e);
+    if(isCaught)return;
+    teleport();
   });
 
-  // Also flee if mouse gets near on body
-  document.addEventListener('mouseover',function(e){
-    if(caught>=6)return;
-    const pos=getPos(e);
-    const br=btn.getBoundingClientRect();
-    if(br.left<-9000)return;
-    const cx=br.left+br.width/2, cy=br.top+br.height/2;
-    const dx=pos.x-cx, dy=pos.y-cy;
-    if(Math.sqrt(dx*dx+dy*dy)<200){
-      jumpAway(e);
-    }
+  window.addEventListener('resize',function(){
+    if(!isCaught)respawnHome();
   });
 
-  // Extra flee: any click near button
+  // Bonus: click outside card aggressively
   document.addEventListener('click',function(e){
-    if(caught>=6)return;
-    const pos=getPos(e);
-    const br=btn.getBoundingClientRect();
-    if(br.left<-9000)return;
-    const cx=br.left+br.width/2, cy=br.top+br.height/2;
-    const dx=pos.x-cx, dy=pos.y-cy;
-    if(Math.sqrt(dx*dx+dy*dy)<300){
-      jumpAway(e);
+    if(isCaught)return;
+    if(!card.contains(e.target) && e.target!==btn){
+      if(Math.random()<0.15){
+        teleport();
+      }
     }
   });
 
-  window.addEventListener('resize',respawnInCard);
 })();
 </script>
 </body>
