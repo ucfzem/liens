@@ -6,7 +6,7 @@
 <title>404 — Page introuvable</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0d0d0d;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0d0d0d;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;overflow:hidden}
 .card{background:rgba(201,168,76,0.07);border:1px solid rgba(201,168,76,0.2);border-radius:20px;padding:60px 40px;max-width:480px;width:100%;text-align:center;position:relative}
 .code{font-size:100px;font-weight:800;font-family:'Cinzel',serif;background:linear-gradient(135deg,#c9a84c,#f0c866);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;margin-bottom:8px}
 .glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;background:radial-gradient(circle,rgba(201,168,76,0.08),transparent 70%);pointer-events:none;z-index:0}
@@ -14,24 +14,127 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans
 h1{font-family:'Cinzel',serif;color:#c9a84c;font-size:1.3rem;margin-bottom:12px;font-weight:700}
 p{color:#8a7a5a;font-size:0.9rem;line-height:1.7;margin-bottom:8px}
 .emoji{font-size:40px;display:block;margin-bottom:16px}
-.btn{display:inline-block;margin-top:24px;padding:14px 36px;border-radius:20px;background:linear-gradient(135deg,#c9a84c,#f0c866);color:#0d0d0d;font-size:1rem;font-weight:700;text-decoration:none;transition:transform .2s,box-shadow .2s}
-.btn:hover{transform:scale(1.03);box-shadow:0 8px 30px rgba(201,168,76,0.3)}
-.btn:active{transform:scale(.97)}
-.lock{display:inline-block;margin-top:20px;color:#5a4a3a;font-size:0.75rem;letter-spacing:1px;text-transform:uppercase}
+.btn-wrap{position:relative;height:80px;margin-top:24px;display:flex;align-items:center;justify-content:center}
+.btn{display:inline-block;padding:14px 36px;border-radius:20px;background:linear-gradient(135deg,#c9a84c,#f0c866);color:#0d0d0d;font-size:1rem;font-weight:700;text-decoration:none;cursor:pointer;position:absolute;transition:left .08s ease,top .08s ease;white-space:nowrap;user-select:none;-webkit-user-select:none;touch-action:none;z-index:2}
+.btn.caught{position:static;transform:none;animation:none;cursor:pointer}
+.btn.caught:hover{transform:scale(1.03);box-shadow:0 8px 30px rgba(201,168,76,0.3)}
+.btn.caught:active{transform:scale(.97)}
+.counter{color:#5a4a3a;font-size:0.75rem;letter-spacing:1px;text-transform:uppercase;margin-top:20px;display:block;min-height:1.2em}
+.msg{color:#5a4a3a;font-size:0.8rem;margin-top:8px;min-height:1.2em;transition:opacity .3s}
 </style>
 </head>
 <body>
 <div class="card">
   <div class="glow"></div>
   <div class="content">
-    <span class="emoji">🔒</span>
+    <span class="emoji" id="emoji">🔒</span>
     <div class="code">404</div>
     <h1>Page introuvable</h1>
-    <p>Cette page a été déplacée, supprimée<br>ou n'a jamais existé.</p>
-    <p style="color:#6a5a4a;font-size:0.8rem">— UcfZem —</p>
-    <a href="https://ucfzem.github.io/works/" class="btn">← Retour aux projets</a>
-    <span class="lock">🔐 Accès restreint</span>
+    <p>Cette page a été déplacée, supprimée<br>ou elle vous évite tout simplement.</p>
+    <p style="color:#6a5a4a;font-size:0.8rem" id="subtitle">Attrapez le bouton pour partir →</p>
+    <div class="btn-wrap" id="btnWrap">
+      <a class="btn" id="btn">← Retour aux projets</a>
+    </div>
+    <span class="counter" id="counter"></span>
+    <span class="msg" id="msg"></span>
   </div>
 </div>
+<script>
+(function(){
+  const btn=document.getElementById('btn');
+  const wrap=document.getElementById('btnWrap');
+  const counter=document.getElementById('counter');
+  const msg=document.getElementById('msg');
+  const emoji=document.getElementById('emoji');
+  const subtitle=document.getElementById('subtitle');
+  let caught=0,escaped=0;
+
+  function getPos(e){
+    const t=e.touches?e.touches[0]:e;
+    return {x:t.clientX,y:t.clientY};
+  }
+
+  function dodge(e){
+    if(caught>=6)return;
+    const pos=getPos(e);
+    const br=btn.getBoundingClientRect();
+    const wr=wrap.getBoundingClientRect();
+    const pad=20;
+    const cx=pos.x-br.width/2;
+    const cy=pos.y-br.height/2;
+    let nx=Math.max(0,Math.min(wr.width-br.width,cx));
+    let ny=Math.max(0,Math.min(wr.height-br.height,cy));
+    const dx=pos.x-(br.left+br.width/2);
+    const dy=pos.y-(br.top+br.height/2);
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist<100){
+      const angle=Math.atan2(dy,dx);
+      const force=Math.max(60,120-dist);
+      nx=Math.max(0,Math.min(wr.width-br.width,br.left-wr.left-Math.cos(angle)*force));
+      ny=Math.max(0,Math.min(wr.height-br.height,br.top-wr.top-Math.sin(angle)*force));
+    }
+    btn.style.left=nx+'px';
+    btn.style.top=ny+'px';
+  }
+
+  function catchMe(){
+    if(caught>=6)return;
+    caught++;
+    escaped++;
+    if(escaped>1){
+      msg.textContent='Manqué… tentative n°'+escaped;
+    }
+    btn.style.left='';
+    btn.style.top='';
+    if(caught<6){
+      const msgs=[
+        'Presque ! encore '+(6-caught)+'×',
+        'Hop ! tu chauffes '+(6-caught)+'×',
+        'Pas assez rapide '+(6-caught)+'×',
+        'Tu peux le faire '+(6-caught)+'×',
+        'Dernière chance !'
+      ];
+      msg.textContent=msgs[caught-1]||'Encore '+(6-caught)+'×';
+    }else{
+      emoji.textContent='🎉';
+      subtitle.textContent='Bravo, tu es plus rapide que le bug !';
+      counter.textContent='Attrapé en '+escaped+' tentative'+(escaped>1?'s':'');
+      msg.textContent='Clique pour rejoindre les projets →';
+      btn.classList.add('caught');
+      btn.style.left='';
+      btn.style.top='';
+      btn.href='https://ucfzem.github.io/works/';
+      btn.removeEventListener('mouseenter',dodge);
+      btn.removeEventListener('mousemove',dodge);
+      btn.removeEventListener('touchstart',dodge);
+      btn.removeEventListener('touchmove',dodge);
+      btn.removeEventListener('click',catchMe);
+    }
+  }
+
+  btn.addEventListener('mouseenter',dodge);
+  btn.addEventListener('mousemove',function(e){
+    if(caught>=6)return;
+    const br=btn.getBoundingClientRect();
+    const dx=e.clientX-(br.left+br.width/2);
+    const dy=e.clientY-(br.top+br.height/2);
+    if(Math.sqrt(dx*dx+dy*dy)<80)dodge(e);
+  });
+  btn.addEventListener('touchstart',function(e){
+    if(caught>=6)return;
+    dodge(e);
+  });
+  btn.addEventListener('touchmove',function(e){
+    if(caught>=6)return;
+    dodge(e);
+  });
+  btn.addEventListener('click',catchMe);
+  btn.addEventListener('touchend',function(e){
+    if(caught>=6)return;
+    e.preventDefault();
+    catchMe();
+  });
+})();
+</script>
 </body>
 </html>
